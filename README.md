@@ -1,21 +1,5 @@
 # DROID-SLAM
 
-
-<!-- <center><img src="misc/DROID.png" width="640" style="center"></center> -->
-
-
-[DROID-SLAM: Deep Visual SLAM for Monocular, Stereo, and RGB-D Cameras](https://arxiv.org/abs/2108.10869)  
-Zachary Teed and Jia Deng
-
-```
-@article{teed2021droid,
-  title={{DROID-SLAM: Deep Visual SLAM for Monocular, Stereo, and RGB-D Cameras}},
-  author={Teed, Zachary and Deng, Jia},
-  journal={Advances in neural information processing systems},
-  year={2021}
-}
-```
-
 **Initial Code Release:** This repo currently provides a single GPU implementation of our monocular, stereo, and RGB-D SLAM systems. It currently contains demos, training, and evaluation scripts. 
 
 
@@ -128,6 +112,22 @@ You can then run the training script. We use 4x3090 RTX GPUs for training which 
 
 ```
 python train.py --datapath=<path to tartanair> --gpus=4 --lr=0.00025
+```
+
+## Forked From
+<!-- <center><img src="misc/DROID.png" width="640" style="center"></center> -->
+
+
+[DROID-SLAM: Deep Visual SLAM for Monocular, Stereo, and RGB-D Cameras](https://arxiv.org/abs/2108.10869)  
+Zachary Teed and Jia Deng
+
+```
+@article{teed2021droid,
+  title={{DROID-SLAM: Deep Visual SLAM for Monocular, Stereo, and RGB-D Cameras}},
+  author={Teed, Zachary and Deng, Jia},
+  journal={Advances in neural information processing systems},
+  year={2021}
+}
 ```
 
 
