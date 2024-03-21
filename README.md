@@ -1,4 +1,4 @@
-# DROID-SLAM
+# DROID-SLAM-Nuscenes
 
 **Initial Code Release:** This repo currently provides a single GPU implementation of our monocular, stereo, and RGB-D SLAM systems. It currently contains demos, training, and evaluation scripts. 
 
