@@ -4,10 +4,6 @@
 <!-- <center><img src="misc/DROID.png" width="640" style="center"></center> -->
 
 
-[![IMAGE ALT TEXT HERE](misc/screenshot.png)](https://www.youtube.com/watch?v=GG78CSlSHSA)
-
-
-
 [DROID-SLAM: Deep Visual SLAM for Monocular, Stereo, and RGB-D Cameras](https://arxiv.org/abs/2108.10869)  
 Zachary Teed and Jia Deng
 
