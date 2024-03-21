@@ -33,7 +33,7 @@ To run the code you will need ...
 ## Getting Started
 1. Clone the repo using the `--recursive` flag
 ```Bash
-git clone --recursive https://github.com/princeton-vl/DROID-SLAM.git
+git clone --recursive git@github.com:zixunh/DROID-SLAM.git
 ```
 
 2. Creating a new anaconda environment using the provided .yaml file. Use `environment_novis.yaml` to if you do not want to use the visualization
