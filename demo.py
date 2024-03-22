@@ -102,7 +102,9 @@ if __name__ == '__main__':
     parser.add_argument("--backend_radius", type=int, default=2)
     parser.add_argument("--backend_nms", type=int, default=3)
     parser.add_argument("--upsample", action="store_true")
+    parser.add_argument("--disable_BA", action="store_true")
     parser.add_argument("--reconstruction_path", help="path to saved reconstruction")
+
     args = parser.parse_args()
 
     args.stereo = False
@@ -131,4 +133,4 @@ if __name__ == '__main__':
     if args.reconstruction_path is not None:
         save_reconstruction(droid, args.reconstruction_path)
 
-    traj_est = droid.terminate(image_stream(args.imagedir, args.calib, args.stride))
+    traj_est = droid.terminate(image_stream(args.imagedir, args.calib, args.stride), enable_BA = not args.disable_BA)
