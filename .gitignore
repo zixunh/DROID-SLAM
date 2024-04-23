@@ -155,4 +155,8 @@ cache
 data
 figures/*.pdf
 
+data/*
+datasets/*
+reconstructions/*
+
 

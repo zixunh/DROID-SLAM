@@ -63,6 +63,7 @@ def save_reconstruction(droid, reconstruction_path):
     import string
 
     t = droid.video.counter.value
+    print(t)
     tstamps = droid.video.tstamp[:t].cpu().numpy()
     images = droid.video.images[:t].cpu().numpy()
     disps = droid.video.disps_up[:t].cpu().numpy()
@@ -82,7 +83,7 @@ if __name__ == '__main__':
     parser.add_argument("--imagedir", type=str, help="path to image directory")
     parser.add_argument("--calib", type=str, help="path to calibration file")
     parser.add_argument("--t0", default=0, type=int, help="starting frame")
-    parser.add_argument("--stride", default=3, type=int, help="frame stride")
+    parser.add_argument("--stride", default=1, type=int, help="frame stride")
 
     parser.add_argument("--weights", default="droid.pth")
     parser.add_argument("--buffer", type=int, default=512)
