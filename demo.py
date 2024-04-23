@@ -89,6 +89,8 @@ if __name__ == '__main__':
     parser.add_argument("--buffer", type=int, default=512)
     parser.add_argument("--image_size", default=[240, 320])
     parser.add_argument("--disable_vis", action="store_true")
+    parser.add_argument("--verbose_vis", action="store_true", help="store temporal mapping results to recon path")
+    parser.add_argument("--reconstruction_path", help="path to saved reconstruction")
 
     parser.add_argument("--beta", type=float, default=0.3, help="weight for translation / rotation components of flow")
     parser.add_argument("--filter_thresh", type=float, default=2.4, help="how much motion before considering new keyframe")
@@ -104,7 +106,6 @@ if __name__ == '__main__':
     parser.add_argument("--backend_nms", type=int, default=3)
     parser.add_argument("--upsample", action="store_true")
     parser.add_argument("--disable_BA", action="store_true")
-    parser.add_argument("--reconstruction_path", help="path to saved reconstruction")
 
     args = parser.parse_args()
 
@@ -116,6 +117,13 @@ if __name__ == '__main__':
     # need high resolution depths
     if args.reconstruction_path is not None:
         args.upsample = True
+    elif args.verbose_vis:
+        print('ERROR: Reconstruction path is not set for verbose visualization.')
+        args.verbose_vis = False
+    
+    if args.verbose_vis and args.disable_vis:
+        print('ERROR: Verbose visualization is not working since visualization is disabled.')
+        args.verbose_vis = False
 
     tstamps = []
     for (t, image, intrinsics) in tqdm(image_stream(args.imagedir, args.calib, args.stride)):

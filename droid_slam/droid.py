@@ -1,7 +1,7 @@
 import torch
 import lietorch
 import numpy as np
-
+import os
 from droid_net import DroidNet
 from depth_video import DepthVideo
 from motion_filter import MotionFilter
@@ -19,6 +19,8 @@ class Droid:
         self.load_weights(args.weights)
         self.args = args
         self.disable_vis = args.disable_vis
+        self.verbose_vis = args.verbose_vis
+        self.verbose_path = os.path.join('./reconstructions/', args.reconstruction_path)
 
         # store images, depth, poses, intrinsics (shared between processes)
         self.video = DepthVideo(args.image_size, args.buffer, stereo=args.stereo)
@@ -35,7 +37,7 @@ class Droid:
         # visualizer
         if not self.disable_vis:
             from visualization import droid_visualization
-            self.visualizer = Process(target=droid_visualization, args=(self.video,))
+            self.visualizer = Process(target=droid_visualization, args=(self.video, self.verbose_vis, self.verbose_path))
             self.visualizer.start()
 
         # post processor - fill in poses for non-keyframes

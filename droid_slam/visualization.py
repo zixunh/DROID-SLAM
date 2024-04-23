@@ -6,6 +6,7 @@ import time
 import argparse
 import numpy as np
 import open3d as o3d
+import os
 
 from lietorch import SE3
 import geom.projective_ops as pops
@@ -50,7 +51,7 @@ def create_point_actor(points, colors):
     point_cloud.colors = o3d.utility.Vector3dVector(colors)
     return point_cloud
 
-def droid_visualization(video, device="cuda:0"):
+def droid_visualization(video, verbose=False, verbose_path=None, device="cuda:0"):
     """ DROID visualization frontend """
 
     torch.cuda.set_device(device)
@@ -96,7 +97,7 @@ def droid_visualization(video, device="cuda:0"):
             images = torch.index_select(video.images, 0, dirty_index)
             images = images.cpu()[:,[2,1,0],3::8,3::8].permute(0,2,3,1) / 255.0
             points = droid_backends.iproj(SE3(poses).inv().data, disps, video.intrinsics[0]).cpu()
-            print(t, points.shape)
+            # print(t, points.shape)
 
             thresh = droid_visualization.filter_thresh * torch.ones_like(disps.mean(dim=[1,2]))
             
@@ -153,3 +154,15 @@ def droid_visualization(video, device="cuda:0"):
 
     vis.run()
     vis.destroy_window()
+
+    if verbose and verbose_path is not None:
+        if not os.path.exists(os.path.join(verbose_path,'verbose_recon')):
+            os.mkdir(os.path.join(verbose_path,'verbose_recon'))
+
+        for i in range(0, len(droid_visualization.points)):
+            open3d_point_cloud = droid_visualization.points[i]
+            points = np.asarray(open3d_point_cloud.points)
+            colors = np.asarray(open3d_point_cloud.colors)
+            np.save(os.path.join(verbose_path,'verbose_recon',str(i).zfill(5)+'_points.npy'), points)
+            np.save(os.path.join(verbose_path,'verbose_recon',str(i).zfill(5)+'_colors.npy'), colors)
+            print('verbose saved', i, points.shape)
