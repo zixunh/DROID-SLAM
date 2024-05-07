@@ -121,9 +121,9 @@ if __name__ == '__main__':
         print('ERROR: Reconstruction path is not set for verbose visualization.')
         args.verbose_vis = False
     
-    if args.verbose_vis and args.disable_vis:
-        print('ERROR: Verbose visualization is not working since visualization is disabled.')
-        args.verbose_vis = False
+    # if args.verbose_vis and args.disable_vis:
+    #     print('ERROR: Verbose visualization is not working since visualization is disabled.')
+    #     args.verbose_vis = False
 
     tstamps = []
     for (t, image, intrinsics) in tqdm(image_stream(args.imagedir, args.calib, args.stride)):

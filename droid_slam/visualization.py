@@ -51,7 +51,7 @@ def create_point_actor(points, colors):
     point_cloud.colors = o3d.utility.Vector3dVector(colors)
     return point_cloud
 
-def droid_visualization(video, verbose=False, verbose_path=None, device="cuda:0"):
+def droid_visualization(video, verbose=False, verbose_path=None, headless=False, device="cuda:0"):
     """ DROID visualization frontend """
 
     torch.cuda.set_device(device)
@@ -143,26 +143,86 @@ def droid_visualization(video, verbose=False, verbose_path=None, device="cuda:0"
             vis.poll_events()
             vis.update_renderer()
 
+    def headless_callback():
+        with torch.no_grad():
+            with video.get_lock():
+                t = video.counter.value 
+                dirty_index, = torch.where(video.dirty.clone())
+                dirty_index = dirty_index
+            if len(dirty_index) == 0:
+                return
+
+            video.dirty[dirty_index] = False
+
+            # convert poses to 4x4 matrix
+            poses = torch.index_select(video.poses, 0, dirty_index)
+            disps = torch.index_select(video.disps, 0, dirty_index)
+            Ps = SE3(poses).inv().matrix().cpu().numpy()
+
+            images = torch.index_select(video.images, 0, dirty_index)
+            images = images.cpu()[:,[2,1,0],3::8,3::8].permute(0,2,3,1) / 255.0
+            points = droid_backends.iproj(SE3(poses).inv().data, disps, video.intrinsics[0]).cpu()
+            # print(t, points.shape)
+
+            thresh = droid_visualization.filter_thresh * torch.ones_like(disps.mean(dim=[1,2]))
+            
+            count = droid_backends.depth_filter(
+                video.poses, video.disps, video.intrinsics[0], dirty_index, thresh)
+
+            count = count.cpu()
+            disps = disps.cpu()
+            masks = ((count >= 2) & (disps > .5*disps.mean(dim=[1,2], keepdim=True)))
+            
+            for i in range(len(dirty_index)):
+                pose = Ps[i]
+                ix = dirty_index[i].item()
+
+                if ix in droid_visualization.cameras:
+                    del droid_visualization.cameras[ix]
+
+                if ix in droid_visualization.points:
+                    del droid_visualization.points[ix]
+
+                ### add camera actor ###
+                cam_actor = create_camera_actor(True)
+                cam_actor.transform(pose)
+                droid_visualization.cameras[ix] = cam_actor
+
+                mask = masks[i].reshape(-1)
+                pts = points[i].reshape(-1, 3)[mask].cpu().numpy()
+                clr = images[i].reshape(-1, 3)[mask].cpu().numpy()
+                
+                ## add point actor ###
+                point_actor = create_point_actor(pts, clr)
+                droid_visualization.points[ix] = point_actor
+
+            droid_visualization.ix += 1
+
     ### create Open3D visualization ###
-    vis = o3d.visualization.VisualizerWithKeyCallback()
-    vis.register_animation_callback(animation_callback)
-    vis.register_key_callback(ord("S"), increase_filter)
-    vis.register_key_callback(ord("A"), decrease_filter)
+    if not headless:
+        vis = o3d.visualization.VisualizerWithKeyCallback()
+        vis.register_animation_callback(animation_callback)
+        vis.register_key_callback(ord("S"), increase_filter)
+        vis.register_key_callback(ord("A"), decrease_filter)
 
-    vis.create_window(height=540, width=960)
-    vis.get_render_option().load_from_json("misc/renderoption.json")
+        vis.create_window(height=540, width=960)
+        vis.get_render_option().load_from_json("misc/renderoption.json")
 
-    vis.run()
-    vis.destroy_window()
+        vis.run()
+        vis.destroy_window()
+    else:
+        pass
 
     if verbose and verbose_path is not None:
         if not os.path.exists(os.path.join(verbose_path,'verbose_recon')):
             os.mkdir(os.path.join(verbose_path,'verbose_recon'))
+            os.mkdir(os.path.join(verbose_path,'verbose_recon','points'))
+            os.mkdir(os.path.join(verbose_path,'verbose_recon','colors'))
 
         for i in range(0, len(droid_visualization.points)):
             open3d_point_cloud = droid_visualization.points[i]
             points = np.asarray(open3d_point_cloud.points)
             colors = np.asarray(open3d_point_cloud.colors)
-            np.save(os.path.join(verbose_path,'verbose_recon',str(i).zfill(5)+'_points.npy'), points)
-            np.save(os.path.join(verbose_path,'verbose_recon',str(i).zfill(5)+'_colors.npy'), colors)
+            np.save(os.path.join(verbose_path,'verbose_recon','points',str(i).zfill(6)+'.npy'), points)
+            np.save(os.path.join(verbose_path,'verbose_recon','colors',str(i).zfill(6)+'.npy'), colors)
             print('verbose saved', i, points.shape)

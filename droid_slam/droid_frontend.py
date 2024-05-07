@@ -16,7 +16,7 @@ class DroidFrontend:
         self.t0 = 0
         self.t1 = 0
 
-        # frontent variables
+        # frontend variables
         self.is_initialized = False
         self.count = 0
 

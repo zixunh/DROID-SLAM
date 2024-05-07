@@ -39,6 +39,11 @@ class Droid:
             from visualization import droid_visualization
             self.visualizer = Process(target=droid_visualization, args=(self.video, self.verbose_vis, self.verbose_path))
             self.visualizer.start()
+        elif self.verbose_vis:
+            print('visualization disabled, while verbose')
+            from visualization import droid_visualization
+            self.visualizer = Process(target=droid_visualization, args=(self.video, self.verbose_vis, self.verbose_path, True))
+            self.visualizer.start()
 
         # post processor - fill in poses for non-keyframes
         self.traj_filler = PoseTrajectoryFiller(self.net, self.video)

@@ -2,4 +2,4 @@
 python demo.py --reconstruction_path demo_kitti --verbose_vis \
     --imagedir=/home/zixunh/Documents/CALI-CAM/mono/rectified/demo \
     --calib=/home/zixunh/Documents/DROID-SLAM/calib/kitti_undistort_left.txt \
-    --stride=1 --disable_BA 
+    --stride=1 --disable_BA --disable_vis
