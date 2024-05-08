@@ -143,61 +143,6 @@ def droid_visualization(video, verbose=False, verbose_path=None, headless=False,
             vis.poll_events()
             vis.update_renderer()
 
-    def headless_callback():
-        with torch.no_grad():
-            with video.get_lock():
-                t = video.counter.value 
-                dirty_index, = torch.where(video.dirty.clone())
-                dirty_index = dirty_index
-            if len(dirty_index) == 0:
-                return
-
-            video.dirty[dirty_index] = False
-
-            # convert poses to 4x4 matrix
-            poses = torch.index_select(video.poses, 0, dirty_index)
-            disps = torch.index_select(video.disps, 0, dirty_index)
-            Ps = SE3(poses).inv().matrix().cpu().numpy()
-
-            images = torch.index_select(video.images, 0, dirty_index)
-            images = images.cpu()[:,[2,1,0],3::8,3::8].permute(0,2,3,1) / 255.0
-            points = droid_backends.iproj(SE3(poses).inv().data, disps, video.intrinsics[0]).cpu()
-            # print(t, points.shape)
-
-            thresh = droid_visualization.filter_thresh * torch.ones_like(disps.mean(dim=[1,2]))
-            
-            count = droid_backends.depth_filter(
-                video.poses, video.disps, video.intrinsics[0], dirty_index, thresh)
-
-            count = count.cpu()
-            disps = disps.cpu()
-            masks = ((count >= 2) & (disps > .5*disps.mean(dim=[1,2], keepdim=True)))
-            
-            for i in range(len(dirty_index)):
-                pose = Ps[i]
-                ix = dirty_index[i].item()
-
-                if ix in droid_visualization.cameras:
-                    del droid_visualization.cameras[ix]
-
-                if ix in droid_visualization.points:
-                    del droid_visualization.points[ix]
-
-                ### add camera actor ###
-                cam_actor = create_camera_actor(True)
-                cam_actor.transform(pose)
-                droid_visualization.cameras[ix] = cam_actor
-
-                mask = masks[i].reshape(-1)
-                pts = points[i].reshape(-1, 3)[mask].cpu().numpy()
-                clr = images[i].reshape(-1, 3)[mask].cpu().numpy()
-                
-                ## add point actor ###
-                point_actor = create_point_actor(pts, clr)
-                droid_visualization.points[ix] = point_actor
-
-            droid_visualization.ix += 1
-
     ### create Open3D visualization ###
     if not headless:
         vis = o3d.visualization.VisualizerWithKeyCallback()
@@ -211,6 +156,7 @@ def droid_visualization(video, verbose=False, verbose_path=None, headless=False,
         vis.run()
         vis.destroy_window()
     else:
+        ### implementation refer to droid_frontend.py ###
         pass
 
     if verbose and verbose_path is not None:
@@ -225,4 +171,90 @@ def droid_visualization(video, verbose=False, verbose_path=None, headless=False,
             colors = np.asarray(open3d_point_cloud.colors)
             np.save(os.path.join(verbose_path,'verbose_recon','points',str(i).zfill(6)+'.npy'), points)
             np.save(os.path.join(verbose_path,'verbose_recon','colors',str(i).zfill(6)+'.npy'), colors)
+            print('verbose saved', i, points.shape)
+
+
+
+class Headless_Vis:
+    def __init__(self, video, verbose=False, verbose_path=None, headless=True, device="cuda:0"):
+        """ DROID visualization frontend """
+
+        torch.cuda.set_device(device)
+        self.video = video
+        self.cameras = {}
+        self.points = {}
+        self.warmup = 8
+        self.scale = 1.0
+        self.ix = 0
+
+        self.filter_thresh = 0.005
+        self.verbose_path = verbose_path
+
+    def headless_callback(self):
+        with torch.no_grad():
+            with self.video.get_lock():
+                t = self.video.counter.value 
+                dirty_index, = torch.where(self.video.dirty.clone())
+                dirty_index = dirty_index
+            if len(dirty_index) == 0:
+                return
+
+            self.video.dirty[dirty_index] = False
+
+            # convert poses to 4x4 matrix
+            poses = torch.index_select(self.video.poses, 0, dirty_index)
+            disps = torch.index_select(self.video.disps, 0, dirty_index)
+            Ps = SE3(poses).inv().matrix().cpu().numpy()
+
+            images = torch.index_select(self.video.images, 0, dirty_index)
+            images = images.cpu()[:,[2,1,0],3::8,3::8].permute(0,2,3,1) / 255.0
+            points = droid_backends.iproj(SE3(poses).inv().data, disps, self.video.intrinsics[0]).cpu()
+            # print(t, points.shape)
+
+            thresh = self.filter_thresh * torch.ones_like(disps.mean(dim=[1,2]))
+            
+            count = droid_backends.depth_filter(
+                self.video.poses, self.video.disps, self.video.intrinsics[0], dirty_index, thresh)
+
+            count = count.cpu()
+            disps = disps.cpu()
+            masks = ((count >= 2) & (disps > .5*disps.mean(dim=[1,2], keepdim=True)))
+            
+            for i in range(len(dirty_index)):
+                pose = Ps[i]
+                ix = dirty_index[i].item()
+
+                if ix in self.cameras:
+                    del self.cameras[ix]
+
+                if ix in self.points:
+                    del self.points[ix]
+
+                ### add camera actor ###
+                cam_actor = create_camera_actor(True)
+                cam_actor.transform(pose)
+                self.cameras[ix] = cam_actor
+
+                mask = masks[i].reshape(-1)
+                pts = points[i].reshape(-1, 3)[mask].cpu().numpy()
+                clr = images[i].reshape(-1, 3)[mask].cpu().numpy()
+                
+                ## add point actor ###
+                point_actor = create_point_actor(pts, clr)
+                self.points[ix] = point_actor
+
+            self.ix += 1
+
+    def headless_store(self):
+        if not os.path.exists(os.path.join(self.verbose_path,'verbose_recon')):
+            os.mkdir(os.path.join(self.verbose_path,'verbose_recon'))
+            os.mkdir(os.path.join(self.verbose_path,'verbose_recon','points'))
+            os.mkdir(os.path.join(self.verbose_path,'verbose_recon','colors'))
+
+        for i in range(0, len(self.points)):
+            open3d_point_cloud = self.points[i]
+            points = np.asarray(open3d_point_cloud.points)
+            colors = np.asarray(open3d_point_cloud.colors)
+            np.save(os.path.join(self.verbose_path,'verbose_recon','points',str(i).zfill(6)+'.npy'), points)
+            np.save(os.path.join(self.verbose_path,'verbose_recon','colors',str(i).zfill(6)+'.npy'), colors)
             print('verbose saved', i, points.shape)

@@ -5,6 +5,7 @@ import numpy as np
 from lietorch import SE3
 from factor_graph import FactorGraph
 
+from visualization import droid_visualization 
 
 class DroidFrontend:
     def __init__(self, net, video, args):
@@ -31,6 +32,12 @@ class DroidFrontend:
         self.frontend_window = args.frontend_window
         self.frontend_thresh = args.frontend_thresh
         self.frontend_radius = args.frontend_radius
+
+        self.headless_verbose = args.verbose_vis and args.disable_vis
+
+    def _vis_init(self, visualizer):
+        if self.headless_verbose:
+            self.visualizer = visualizer
 
     def __update(self):
         """ add edges, perform update """
@@ -71,6 +78,9 @@ class DroidFrontend:
 
         # update visualization
         self.video.dirty[self.graph.ii.min():self.t1] = True
+        if self.headless_verbose:
+            self.visualizer.headless_callback()
+
 
     def __initialize(self):
         """ initialize the SLAM system """

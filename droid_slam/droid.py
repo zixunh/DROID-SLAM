@@ -41,9 +41,9 @@ class Droid:
             self.visualizer.start()
         elif self.verbose_vis:
             print('visualization disabled, while verbose')
-            from visualization import droid_visualization
-            self.visualizer = Process(target=droid_visualization, args=(self.video, self.verbose_vis, self.verbose_path, True))
-            self.visualizer.start()
+            from visualization import Headless_Vis
+            self.visualizer = Headless_Vis(self.video, self.verbose_vis, self.verbose_path)
+            self.frontend._vis_init(self.visualizer)
 
         # post processor - fill in poses for non-keyframes
         self.traj_filler = PoseTrajectoryFiller(self.net, self.video)
@@ -93,6 +93,9 @@ class Droid:
         if enable_BA: 
             print("#" * 32)
             self.backend(12)
+
+        if self.verbose_vis:
+            self.visualizer.headless_store()
 
         camera_trajectory = self.traj_filler(stream)
         return camera_trajectory.inv().data.cpu().numpy()
