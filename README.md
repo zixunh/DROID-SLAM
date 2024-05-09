@@ -4,7 +4,7 @@
 
 
 ## Requirements
-Download the compiled conda environment from [this link](https://drive.google.com/file/d/18ejHMjb0uAI5sc8uOOj1jGmtMQ1nTruB/view?usp=sharing), and unzip to install.
+Download the compiled conda environment from [this link](hhttps://drive.google.com/file/d/1pc9tHUpgIUFWewkgjaGqs6rHAkCXXlW0/view?usp=drive_link), and unzip to install.
 
 To run the code you will need ...
 * **Inference:** Running the demos will require a GPU with at least 11G of memory. 
