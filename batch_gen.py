@@ -1,3 +1,6 @@
+SEQ_IDS = ['599189', '599190']
+CAM_OPTIONS = ['nrcs_left', 'nrcs_front']
+
 import sys
 sys.path.append('droid_slam')
 
@@ -7,18 +10,12 @@ import torch
 import lietorch
 import cv2
 import os
-import glob 
+import glob
 import time
 import argparse
-
 from torch.multiprocessing import Process
 from droid import Droid
-
 import torch.nn.functional as F
-
-SEQ_IDS = ['599189', '599190']
-CAM_OPTIONS = ['nrcs_left', 'nrcs_front']
-
 
 def show_image(image):
     image = image.permute(1, 2, 0).cpu().numpy()
@@ -30,34 +27,30 @@ def image_stream(imagedir, calib, stride):
 
     calib = np.loadtxt(calib, delimiter=" ")
     fx, fy, cx, cy = calib[:4]
-
     K = np.eye(3)
+
     K[0,0] = fx
     K[0,2] = cx
     K[1,1] = fy
     K[1,2] = cy
 
     image_list = sorted(os.listdir(imagedir))[::stride]
-
     for t, imfile in enumerate(image_list):
         image = cv2.imread(os.path.join(imagedir, imfile))
+
         if len(calib) > 4:
             image = cv2.undistort(image, K, calib[4:])
 
         h0, w0, _ = image.shape
         h1 = int(h0 * np.sqrt((384 * 512) / (h0 * w0)))
         w1 = int(w0 * np.sqrt((384 * 512) / (h0 * w0)))
-
         image = cv2.resize(image, (w1, h1))
         image = image[:h1-h1%8, :w1-w1%8]
         image = torch.as_tensor(image).permute(2, 0, 1)
-
         intrinsics = torch.as_tensor([fx, fy, cx, cy])
         intrinsics[0::2] *= (w1 / w0)
         intrinsics[1::2] *= (h1 / h0)
-
         yield t, image[None], intrinsics
-
 
 def save_reconstruction(droid, reconstruction_path):
 
@@ -67,6 +60,7 @@ def save_reconstruction(droid, reconstruction_path):
 
     t = droid.video.counter.value
     print(t)
+
     tstamps = droid.video.tstamp[:t].cpu().numpy()
     images = droid.video.images[:t].cpu().numpy()
     disps = droid.video.disps_up[:t].cpu().numpy()
@@ -80,11 +74,12 @@ def save_reconstruction(droid, reconstruction_path):
     np.save("reconstructions/{}/poses.npy".format(reconstruction_path), poses)
     np.save("reconstructions/{}/intrinsics.npy".format(reconstruction_path), intrinsics)
 
-
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root_dir", type=str, default='/home/huz1syv/data/export', help="path to image / config directory")
-    parser.add_argument("--prefix", type=str, default = 'mono_rectified_', help="prefix for scenes' dir")
+
+    parser.add_argument("--root_dir", type=str, default='/home/huz1syv/data/export', help="path to image directory")
+    parser.add_argument("--prefix", type=str, default='mono_rectified_', help="prefix")
 
     parser.add_argument("--t0", default=0, type=int, help="starting frame")
     parser.add_argument("--stride", default=1, type=int, help="frame stride")
@@ -117,41 +112,34 @@ if __name__ == '__main__':
 
     def gen_slam_pts():
         droid = None
-
         # need high resolution depths
         if args.reconstruction_path is not None:
             args.upsample = True
         elif args.verbose_vis:
             print('ERROR: Reconstruction path is not set for verbose visualization.')
             args.verbose_vis = False
-        
-        if args.verbose_vis and args.disable_vis:
-            print('ERROR: Verbose visualization is not working since visualization is disabled.')
-            args.verbose_vis = False
-
+        # if args.verbose_vis and args.disable_vis:
+        #     print('ERROR: Verbose visualization is not working since visualization is disabled.')
+        #     args.verbose_vis = False
         tstamps = []
         for (t, image, intrinsics) in tqdm(image_stream(args.imagedir, args.calib, args.stride)):
             if t < args.t0:
                 continue
-
             if not args.disable_vis:
                 show_image(image[0])
-
             if droid is None:
                 args.image_size = [image.shape[2], image.shape[3]]
                 droid = Droid(args)
-            
             droid.track(t, image, intrinsics=intrinsics)
 
         if args.reconstruction_path is not None:
             save_reconstruction(droid, args.reconstruction_path)
-
         traj_est = droid.terminate(image_stream(args.imagedir, args.calib, args.stride), enable_BA = not args.disable_BA)
 
     for seq_id in SEQ_IDS:
         for cam_name in CAM_OPTIONS:
             args.imagedir = os.path.join(args.root_dir, args.prefix + seq_id + '_' + cam_name)
             args.calib = os.path.join(args.imagedir, 'undistorted_K.txt')
-            args.reconstruction_path = seqid + '_' + cam_name
+            args.reconstruction_path = seq_id + '_' + cam_name
             # run
             gen_slam_pts()
