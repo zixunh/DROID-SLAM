@@ -1,14 +1,15 @@
-# DROID-SLAM-nuScenes
+# DROID-SLAOC
 
 **Initial Code Release:** This repo currently provides a single GPU implementation of our monocular, stereo, and RGB-D SLAM systems. It currently contains demos, training, and evaluation scripts. 
 
-
 ## Requirements
-Download the compiled conda environment from [this link](hhttps://drive.google.com/file/d/1pc9tHUpgIUFWewkgjaGqs6rHAkCXXlW0/view?usp=drive_link), and unzip to install.
+Download the compiled conda environment from [this link](https://drive.google.com/file/d/1pc9tHUpgIUFWewkgjaGqs6rHAkCXXlW0/view?usp=drive_link), and unzip to install.
+
+
+# Original README
 
 To run the code you will need ...
 * **Inference:** Running the demos will require a GPU with at least 11G of memory. 
-
 * **Training:** Training requires a GPU with at least 24G of memory. We train on 4 x RTX-3090 GPUs.
 
 ## Getting Started
@@ -29,7 +30,6 @@ pip install gdown
 python setup.py install
 ```
 
-
 ## Demos
 
 1. Download the model from google drive: [droid.pth](https://drive.google.com/file/d/1PpqVt1H4maBa_GbPJp4NwxRsd9jk-elh/view?usp=sharing)
@@ -41,27 +41,21 @@ python setup.py install
 
 Run the demo on any of the samples (all demos can be run on a GPU with 11G of memory). While running, press the "s" key to increase the filtering threshold (= more points) and "a" to decrease the filtering threshold (= fewer points). To save the reconstruction with full resolution depth maps use the `--reconstruction_path` flag.
 
-
 ```Python
 python demo.py --imagedir=data/abandonedfactory --calib=calib/tartan.txt --stride=2
 ```
-
 ```Python
 python demo.py --imagedir=data/sfm_bench/rgb --calib=calib/eth.txt
 ```
-
 ```Python
 python demo.py --imagedir=data/Barn --calib=calib/barn.txt --stride=1 --backend_nms=4
 ```
-
 ```Python
 python demo.py --imagedir=data/mav0/cam0/data --calib=calib/euroc.txt --t0=150
 ```
-
 ```Python
 python demo.py --imagedir=data/rgbd_dataset_freiburg3_cabinet/rgb --calib=calib/tum3.txt
 ```
-
 
 **Running on your own data:** All you need is a calibration file. Calibration files are in the form 
 ```
@@ -99,7 +93,6 @@ Download the [ETH3D](https://www.eth3d.net/slam_datasets) dataset
 ```
 
 ## Training
-
 First download the TartanAir dataset. The download script can be found in `thirdparty/tartanair_tools/download_training.py`. You will only need the `rgb` and `depth` data.
 
 ```
@@ -110,15 +103,12 @@ You can then run the training script. We use 4x3090 RTX GPUs for training which 
 
 **Note:** On the first training run, covisibility is computed between all pairs of frames. This can take several hours, but the results are cached so that future training runs will start immediately. 
 
-
 ```
 python train.py --datapath=<path to tartanair> --gpus=4 --lr=0.00025
 ```
 
 ## Forked From
 <!-- <center><img src="misc/DROID.png" width="640" style="center"></center> -->
-
-
 [DROID-SLAM: Deep Visual SLAM for Monocular, Stereo, and RGB-D Cameras](https://arxiv.org/abs/2108.10869)  
 Zachary Teed and Jia Deng
 
@@ -130,7 +120,6 @@ Zachary Teed and Jia Deng
   year={2021}
 }
 ```
-
 
 ## Acknowledgements
 Data from [TartanAir](https://theairlab.org/tartanair-dataset/) was used to train our model. We additionally use evaluation tools from [evo](https://github.com/MichaelGrupp/evo) and [tartanair_tools](https://github.com/castacks/tartanair_tools).
