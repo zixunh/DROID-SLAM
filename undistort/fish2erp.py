@@ -202,5 +202,5 @@ if __name__ == '__main__':
     print('New Intrinsic:', '\n', K_new)
 
     # dump into updated K file
-    with open('./rectified/new_K.txt', 'w') as f:
+    with open('./rectified/{}/new_K.txt'.format(args.rectified_path), 'w') as f:
         f.write("{} {} {} {}".format(K_new[0][0],K_new[1][1],K_new[0][2],K_new[1][2]))
