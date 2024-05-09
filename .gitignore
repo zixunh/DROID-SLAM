@@ -159,4 +159,4 @@ data/*
 datasets/*
 reconstructions/*
 
-./undistort/rectified/*
+undistort/rectified/*
